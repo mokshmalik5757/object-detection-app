@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Instance Segmentation Result &#x1F50E;</title>
+    <link rel="stylesheet" href="static/result.css">
+</head>
+<body>
+    <h1>Instance Segmentation Result</h1>
+    {% if result_base64_list %}
+        {% for result_base64 in result_base64_list %}
+            <div class="result-container">
+                <input type="checkbox" id="checkbox-{{ loop.index }}" class="image-checkbox">
+                <label for="checkbox-{{ loop.index }}" class="checkbox-label">Hide Image</label>
+                <img class="result-image" src="data:image/jpeg;base64,{{ result_base64 }}" alt="Result Image">
+                {% if show_original %}
+                    {% if original_base64_list %}
+                        {% set original_base64 = original_base64_list[loop.index0] %}
+                        <img class="original-image" src="data:image/jpeg;base64,{{ original_base64 }}" alt="Original Image">
+                    {% endif %}
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No results to display.</p>
+    {% endif %}
+
+    <script>
+        const checkboxes = document.querySelectorAll('.image-checkbox');
+        checkboxes.forEach((checkbox) => {
+            checkbox.addEventListener('change', () => {
+                const resultContainer = checkbox.parentElement;
+                const resultImage = resultContainer.querySelector('.result-image');
+                const originalImage = resultContainer.querySelector('.original-image');
+                if (checkbox.checked) {
+                    resultImage.style.display = 'none';
+                    if (originalImage) {
+                        originalImage.style.display = 'none';
+                    }
+                } else {
+                    resultImage.style.display = 'block';
+                    if (originalImage) {
+                        originalImage.style.display = 'block';
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="This page provides information about instance segmentation &#x1F50E;">
+    <link rel="icon" href="static/icons8-compact-camera-48.png" type="image/png">
+    <title>Instance Segmentation</title>
+
+    <link rel="stylesheet" href="static/index.css">
+    <style>
+        .preview-image {
+            max-width: 200px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Instance Segmentation &#x1F50E;</h1>
+    <form class = "upload-form" action="/" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept="image/*" multiple onchange="previewFiles(event)">
+        <div id="preview-container"></div>
+        <input type="submit" value="Upload &#xe232;">
+    </form>
+
+    <script>
+        function previewFiles(event) {
+            const previewContainer = document.getElementById('preview-container');
+            previewContainer.innerHTML = '';
+
+            const files = event.target.files;
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    const previewImage = document.createElement('img');
+                    previewImage.classList.add('preview-image');
+                    previewImage.src = e.target.result;
+
+                    const crossButton = document.createElement('button');
+                    crossButton.innerHTML = '&#10060;';
+                    crossButton.classList.add('cross-button');
+                    crossButton.addEventListener('click', function () {
+                        previewContainer.removeChild(previewImage);
+                        previewContainer.removeChild(crossButton);
+                        fileInput.value = null;
+                    });
+
+                    previewContainer.appendChild(previewImage);
+                    previewContainer.appendChild(crossButton);
+                };
+
+                reader.readAsDataURL(file);
+            }
+        }
+
+        const fileInput = document.getElementById('file-input');
+        fileInput.addEventListener('change', previewFiles);
+    </script>
+</body>
+</html>
+
