@@ -9,7 +9,6 @@ from detectron2.engine import DefaultPredictor
 from detectron2.config import get_cfg
 from detectron2.utils.visualizer import Visualizer
 from detectron2.data import MetadataCatalog
-from pyngrok import ngrok
 import base64
 
 
@@ -29,7 +28,7 @@ def perform_instance_segmentation(image_path):
     lvis_path = "LVISv0.5-InstanceSegmentation/mask_rcnn_X_101_32x8d_FPN_1x.yaml"
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file(lvis_path))
-    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5
+    cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.1
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(lvis_path)
     cfg.MODEL.DEVICE = "cpu"
     predictor = DefaultPredictor(cfg)
@@ -79,10 +78,6 @@ def index():
 
 
 if __name__ == '__main__':
-    # Start ngrok tunnel
-    public_url = ngrok.connect(port=5000).public_url
-    print(f"Running Flask app on {public_url}")
-
     # Run the Flask app
-    app.run()
+    app.run(debug=True)
 
