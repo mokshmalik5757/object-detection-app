@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+load_dotenv()
 import os
 from flask import Flask, request, render_template, redirect
 from werkzeug.utils import secure_filename
