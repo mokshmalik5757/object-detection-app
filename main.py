@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from PIL import Image
 from transformers import pipeline
+import easyocr
+import matplotlib.pyplot as plt
 
 app = Flask(__name__)
 
@@ -12,6 +14,16 @@ def image_classification_single(image_path):
     for i in range(0, 2):
         two_results.append(result[i]["label"])
     return two_results
+
+def image_ocr(image_path):
+    obj = easyocr.Reader(lang_list=["en", "hi"], gpu= False)
+    ocr_text = []
+    img = plt.imread(image_path)
+    result = obj.readtext(img)
+    for index in range(len(result)):
+        ocr_text.append(result[index][1])
+    return ocr_text
+
 
 @app.route("/", methods=["GET", "POST"])
 def upload():
@@ -25,6 +37,7 @@ def upload():
         return redirect(url_for("results"))
     return render_template("upload.html")
 
+
 @app.route("/results")
 def results():
     image_path = "static/uploaded_image.jpg"
@@ -34,7 +47,7 @@ def results():
 @app.route("/api/v1/model", methods = ["POST"])
 def callModel():
     apiResult = {"Message": [],
-                 "Data": {"result": [{"tags": []}]},
+                 "Data": {"result": [{"tags": [], "text": []}]},
                  "Status": []}
     if "image" in request.files:
         images = request.files.getlist("image")  # Get a list of uploaded image files
@@ -45,7 +58,9 @@ def callModel():
             image.save("static/uploaded_image.jpg")  # Save each image file
             image_path = "static/uploaded_image.jpg"
             classification_results = image_classification_single(image_path)
+            ocr_results = image_ocr(image_path)
             apiResult['Data']['result'][0]['tags'].append(classification_results)
+            apiResult['Data']['result'][0]['text'].append(ocr_results)
 
         apiResult["Status"].append("Ok")
 
@@ -54,8 +69,10 @@ def callModel():
     else:
         apiResult["Message"].append("Some error occourred")
         apiResult["Data"]["result"][0]["tags"].append("No image found")
+        apiResult['Data']['result'][0]['text'].append("No text found")
         apiResult["Status"].append("Error")
         return jsonify(apiResult)
+
 
 
 if __name__ == "__main__":
