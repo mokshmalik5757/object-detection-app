@@ -33,22 +33,29 @@ def results():
 
 @app.route("/api/v1/model", methods = ["POST"])
 def callModel():
+    apiResult = {"Message": [],
+                 "Data": {"result": [{"tags": []}]},
+                 "Status": []}
     if "image" in request.files:
         images = request.files.getlist("image")  # Get a list of uploaded image files
-        apiResult = []
+
 
         for image in images:
             image.save("static/uploaded_image.jpg")  # Save each image file
             image_path = "static/uploaded_image.jpg"
             classification_results = image_classification_single(image_path)
-            result = {"results": classification_results}
-            apiResult.append(result)
+            apiResult["Message"].append("Tags added successfully")
+            apiResult['Data']['result'][0]['tags'].append(classification_results)
+            apiResult["Status"].append("Ok")
 
         return jsonify(apiResult)
     else:
-        return "No Images Found"
+        apiResult["Message"].append("Some error occourred")
+        apiResult["Data"]["result"].append("No image found")
+        apiResult["Status"].append("Error")
+        return jsonify(apiResult)
 
-git 
+
 if __name__ == "__main__":
     app.run(debug=True)
 
