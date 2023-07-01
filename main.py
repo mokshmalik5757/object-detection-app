@@ -15,8 +15,9 @@ def image_classification_single(image_path):
         two_results.append(result[i]["label"])
     return two_results
 
-def image_ocr(image_path):
-    obj = easyocr.Reader(lang_list=["en", "hi"], gpu= False)
+def image_ocr(image_path, lang):
+    lang_list = lang.strip("()").split(",")
+    obj = easyocr.Reader(lang_list=lang_list, gpu= False)
     ocr_text = []
     img = plt.imread(image_path)
     result = obj.readtext(img)
@@ -49,8 +50,9 @@ def callModel():
     apiResult = {"Message": [],
                  "Data": {"result": [{"tags": [], "text": []}]},
                  "Status": []}
-    if "image" in request.files:
-        images = request.files.getlist("image")  # Get a list of uploaded image files
+    if "image" in request.files and "locale" in request.args:
+        images = request.files.getlist("image") # Get a list of uploaded image files
+        locales = request.args.get("locale")
 
         apiResult["Message"].append("Tags added successfully")
 
@@ -58,8 +60,8 @@ def callModel():
             image.save("static/uploaded_image.jpg")  # Save each image file
             image_path = "static/uploaded_image.jpg"
             classification_results = image_classification_single(image_path)
-            ocr_results = image_ocr(image_path)
             apiResult['Data']['result'][0]['tags'].append(classification_results)
+            ocr_results = image_ocr(image_path, locales)
             apiResult['Data']['result'][0]['text'].append(ocr_results)
 
         apiResult["Status"].append("Ok")
@@ -67,7 +69,7 @@ def callModel():
 
         return jsonify(apiResult)
     else:
-        apiResult["Message"].append("Some error occourred")
+        apiResult["Message"].append("Some error occurred")
         apiResult["Data"]["result"][0]["tags"].append("No image found")
         apiResult['Data']['result'][0]['text'].append("No text found")
         apiResult["Status"].append("Error")
