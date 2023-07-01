@@ -17,9 +17,13 @@
 </head>
 <body>
     <h1>Instance Segmentation &#x1F50E;</h1>
-    <form class = "upload-form" action="/" method="post" enctype="multipart/form-data">
+    <form class="upload-form" action="/" method="post" enctype="multipart/form-data">
         <input type="file" name="file" accept="image/*" multiple onchange="previewFiles(event)">
         <div id="preview-container"></div>
+        <label for="single">Single</label>
+        <input type="checkbox" name="single" id="single">
+        <label for="multiple">Multiple</label>
+        <input type="checkbox" name="multiple" id="multiple">
         <input type="submit" value="Upload &#xe232;">
     </form>
 
@@ -54,10 +58,6 @@
                 reader.readAsDataURL(file);
             }
         }
-
-        const fileInput = document.getElementById('file-input');
-        fileInput.addEventListener('change', previewFiles);
     </script>
 </body>
 </html>
-

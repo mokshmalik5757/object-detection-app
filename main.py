@@ -1,45 +1,55 @@
-import matplotlib.pyplot as plt
-# Some basic setup:
-# Setup detectron2 logger
-from detectron2.utils.logger import setup_logger
+from flask import Flask, render_template, request, redirect, url_for, jsonify
+from PIL import Image
+from transformers import pipeline
 
-setup_logger()
+app = Flask(__name__)
 
-# import some common libraries
-import cv2
+def image_classification_single(image_path):
+    two_results = []
+    image = Image.open(image_path)
+    classifier = pipeline("image-classification", model="google/vit-base-patch16-224")
+    result = classifier(image)
+    for i in range(0, 2):
+        two_results.append(result[i]["label"])
+    return two_results
 
-# import some common detectron2 utilities
-from detectron2 import model_zoo
-from detectron2.engine import DefaultPredictor
-from detectron2.config import get_cfg
-from detectron2.utils.visualizer import Visualizer
-from detectron2.data import MetadataCatalog, DatasetCatalog
+@app.route("/", methods=["GET", "POST"])
+def upload():
+    if request.method == "POST":
+        if "image" not in request.files:
+            return redirect(request.url)
+        image = request.files["image"]
+        if image.filename == "":
+            return redirect(request.url)
+        image.save("static/uploaded_image.jpg")
+        return redirect(url_for("results"))
+    return render_template("upload.html")
 
-lvis_path = "LVISv0.5-InstanceSegmentation/mask_rcnn_X_101_32x8d_FPN_1x.yaml"
+@app.route("/results")
+def results():
+    image_path = "static/uploaded_image.jpg"
+    classification_results = image_classification_single(image_path)
+    return render_template("final.html", image_path=image_path, classification_results=classification_results)
 
-im = cv2.imread("./input.jpg")
+@app.route("/api/v1/model", methods = ["POST"])
+def callModel():
+    if "image" in request.files:
+        images = request.files.getlist("image")  # Get a list of uploaded image files
+        apiResult = []
 
-cfg = get_cfg()
-# add project-specific config (e.g., TensorMask) here if you're not running a model in detectron2's core library
-cfg.merge_from_file(model_zoo.get_config_file(lvis_path))
-cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # set threshold for this model
-# Find a model from detectron2's model zoo. You can use the https://dl.fbaipublicfiles... url as well
-cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(lvis_path)
-cfg.MODEL.DEVICE = "cpu"
-predictor = DefaultPredictor(cfg)
-outputs = predictor(im)
+        for image in images:
+            image.save("static/uploaded_image.jpg")  # Save each image file
+            image_path = "static/uploaded_image.jpg"
+            classification_results = image_classification_single(image_path)
+            result = {"results": classification_results}
+            apiResult.append(result)
 
+        return jsonify(apiResult)
+    else:
+        return "No Images Found"
 
-v = Visualizer(im[:, :, ::-1], MetadataCatalog.get(cfg.DATASETS.TRAIN[0]), scale=1.2)
-out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
+git 
+if __name__ == "__main__":
+    app.run(debug=True)
 
-def cv2_show(im):
-    im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-    plt.figure(figsize=(25,7.5)), cv2.imshow(im), plt.axis('off');
-plt.figure(figsize=(10,5))
-
-
-cv2.imshow("Result", out.get_image()[:, :, ::-1])
-cv2.waitKey(0)
-cv2.destroyAllWindows()
 

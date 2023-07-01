@@ -9,6 +9,8 @@ from detectron2.engine import DefaultPredictor
 from detectron2.config import get_cfg
 from detectron2.utils.visualizer import Visualizer
 from detectron2.data import MetadataCatalog
+from transformers import pipeline
+from PIL import Image
 import base64
 
 
@@ -24,7 +26,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def perform_instance_segmentation(image_path):
+def perform_instance_segmentation_multiple(image_path):
     lvis_path = "LVISv0.5-InstanceSegmentation/mask_rcnn_X_101_32x8d_FPN_1x.yaml"
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file(lvis_path))
@@ -39,6 +41,16 @@ def perform_instance_segmentation(image_path):
     result_path = os.path.join("uploads", 'result.jpg')
     cv2.imwrite(result_path, out.get_image()[:, :, ::-1])
     return result_path
+
+def image_classification_single(image_path):
+    two_results = []
+    image = Image.open(image_path)
+    classifier = pipeline("image-classification", model="google/vit-base-patch16-224")
+    result = classifier(image)
+    for i in range (0,2):
+        two_results.append(result[i]["label"])
+
+    return two_results
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -56,7 +68,7 @@ def index():
                 filename = secure_filename(file.filename)
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(file_path)
-                result_path = perform_instance_segmentation(file_path)
+                result_path = perform_instance_segmentation_multiple(file_path)
 
                 with open(result_path, 'rb') as f:
                     result_data = f.read()
@@ -75,6 +87,12 @@ def index():
         return render_template('result.html', original_base64_list=original_base64_list, result_base64_list=result_base64_list, show_result=show_result)
 
     return render_template('index.html')
+
+@app.route("/results")
+def results():
+    image_path = "static/uploaded_image.jpg"
+    classification_results = image_classification_single(image_path)
+    return render_template("final.html", image_path=image_path, classification_results=classification_results)
 
 
 if __name__ == '__main__':

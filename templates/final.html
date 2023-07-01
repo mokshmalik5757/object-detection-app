@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Classification Results</title>
+    <link rel="stylesheet" href="static/final.css">
+    <script>
+        function editTag(tagId) {
+            var tagElement = document.getElementById(tagId);
+            tagElement.contentEditable = true;
+            tagElement.focus();
+            tagElement.parentNode.classList.add("tag-editable");
+        }
+
+        function deleteTag(tagId) {
+            var tagElement = document.getElementById(tagId);
+            tagElement.parentNode.removeChild(tagElement);
+        }
+    </script>
+</head>
+<body>
+    <h1>Image Classification Results</h1>
+    <h2>Uploaded Image:</h2>
+    <img src="{{ image_path }}" alt="Uploaded Image" width="400">
+    <h2>Classification Results:</h2>
+    <ul>
+        {% for result in classification_results %}
+            <li class="tag" id="tag_{{ loop.index }}">
+                <span class="tag-text" id="tag_text_{{ loop.index }}" onclick="editTag('tag_text_{{ loop.index }}')">{{ result }}</span>
+                <span class="tag-cancel" onclick="deleteTag('tag_{{ loop.index }}')">X</span>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
