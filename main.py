@@ -47,14 +47,14 @@ def results():
 
 @app.route("/api/v1/model", methods = ["POST"])
 def callModel():
-    apiResult = {"Message": [],
+    apiResult = {"Message": "placeholder",
                  "Data": {"result": [{"tags": [], "text": []}]},
-                 "Status": []}
-    if "image" in request.files and "locale" in request.args:
-        images = request.files.getlist("image") # Get a list of uploaded image files
-        locales = request.args.get("locale")
+                 "Status": "placeholder"}
+    if "image" in request.files and "locale" in request.form:
+        images = request.files.getlist("image")  # Get a list of uploaded image files
+        locales = request.form.get("locale")
 
-        apiResult["Message"].append("Tags added successfully")
+        apiResult["Message"] = "Tags added successfully"
 
         for image in images:
             image.save("static/uploaded_image.jpg")  # Save each image file
@@ -64,18 +64,15 @@ def callModel():
             ocr_results = image_ocr(image_path, locales)
             apiResult['Data']['result'][0]['text'].append(ocr_results)
 
-        apiResult["Status"].append("Ok")
-
+        apiResult["Status"] = "Ok"
 
         return jsonify(apiResult)
     else:
-        apiResult["Message"].append("Some error occurred")
+        apiResult["Message"] = "Some error occurred"
         apiResult["Data"]["result"][0]["tags"].append("No image found")
         apiResult['Data']['result'][0]['text'].append("No text found")
-        apiResult["Status"].append("Error")
+        apiResult["Status"] = "Error"
         return jsonify(apiResult)
-
-
 
 if __name__ == "__main__":
     app.run(debug=True)
