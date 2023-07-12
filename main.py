@@ -1,15 +1,19 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from PIL import Image
-from transformers import pipeline
+from transformers import ViTImageProcessor
+from optimum.pipelines import pipeline
 import easyocr
 import matplotlib.pyplot as plt
 
 app = Flask(__name__)
 
+feature_extractor = ViTImageProcessor.from_pretrained('google/vit-base-patch16-224')
+
+
 def image_classification_single(image_path):
     two_results = []
     image = Image.open(image_path)
-    classifier = pipeline("image-classification", model="google/vit-base-patch16-224")
+    classifier = pipeline("image-classification", model="google/vit-base-patch16-224",  accelerator = "bettertransformer", feature_extractor = feature_extractor)
     result = classifier(image)
     for i in range(0, 2):
         two_results.append(result[i]["label"])
