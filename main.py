@@ -1,19 +1,32 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from PIL import Image
 from transformers import ViTImageProcessor
-from optimum.pipelines import pipeline
+from transformers import MobileViTImageProcessor, MobileViTForImageClassification
+from transformers import pipeline
+from optimum.pipelines import pipeline as pp
 import easyocr
 import matplotlib.pyplot as plt
 
 app = Flask(__name__)
 
-feature_extractor = ViTImageProcessor.from_pretrained('google/vit-base-patch16-224')
+feature_extractor_apple = MobileViTImageProcessor.from_pretrained("apple/mobilevit-small")
+feature_extractor_google = ViTImageProcessor.from_pretrained('google/vit-base-patch16-224')
+model = MobileViTForImageClassification.from_pretrained("apple/mobilevit-small")
 
+
+def image_classification_single_apple(image_path):
+    two_results = []
+    image = Image.open(image_path)
+    classifier = pipeline("image-classification", model=model, feature_extractor=feature_extractor_apple)
+    result = classifier(image)
+    for i in range(0, 2):
+        two_results.append(result[i]["label"])
+    return two_results
 
 def image_classification_single(image_path):
     two_results = []
     image = Image.open(image_path)
-    classifier = pipeline("image-classification", model="google/vit-base-patch16-224",  accelerator = "bettertransformer", feature_extractor = feature_extractor)
+    classifier = pp("image-classification", model='google/vit-base-patch16-224', accelerator="bettertransformer", feature_extractor = feature_extractor_google)
     result = classifier(image)
     for i in range(0, 2):
         two_results.append(result[i]["label"])
@@ -119,6 +132,7 @@ def callModel():
             if locales is not None:
                 ocr_results = image_ocr(image_path, locales)
                 apiResult['Data']['result'][0]['text'].append(ocr_results)
+                apiResult["Message"] = "Tags and Text added successfully"
 
         apiResult["Status"] = "Ok"
 
@@ -152,6 +166,7 @@ def google_ocr():
             if locales is not None:
                 ocr_results = detect_text(image_path, locales)
                 apiResult['Data']['result'][0]['text'].append(ocr_results)
+                apiResult["Message"] = "Tags and Text added successfully"
 
         apiResult["Status"] = "Ok"
 
@@ -164,6 +179,39 @@ def google_ocr():
         apiResult["Status"] = "Error"
         return jsonify(apiResult)
 
+@app.route("/api/v1/google-model-apple", methods = ["POST"])
+def apple_image_google_ocr():
+    locales = None
+
+    apiResult = {"Message": "placeholder",
+                 "Data": {"result": [{"tags": [], "text": []}]},
+                 "Status": "placeholder"}
+    if "image" in request.files:
+        images = request.files.getlist("image")  # Get a list of uploaded image files
+        locales = request.form.get("locale")
+
+        apiResult["Message"] = "Tags added successfully"
+
+        for image in images:
+            image.save("static/uploaded_image.jpg")  # Save each image file
+            image_path = "static/uploaded_image.jpg"
+            classification_results = image_classification_single_apple(image_path)
+            apiResult['Data']['result'][0]['tags'].append(classification_results)
+            if locales is not None:
+                ocr_results = detect_text(image_path, locales)
+                apiResult['Data']['result'][0]['text'].append(ocr_results)
+                apiResult["Message"] = "Tags and Text added successfully"
+
+        apiResult["Status"] = "Ok"
+
+        return jsonify(apiResult)
+    else:
+        apiResult["Message"] = "Some error occurred"
+        apiResult["Data"]["result"][0]["tags"].append("No image found")
+        if locales is not None:
+            apiResult['Data']['result'][0]['text'].append("No text found")
+        apiResult["Status"] = "Error"
+        return jsonify(apiResult)
 
 @app.route("/api/v1/google-model-all", methods = ["POST"])
 def google_text_and_ocr():
@@ -186,7 +234,7 @@ def google_text_and_ocr():
             if locales is not None:
                 ocr_results = detect_text(image_path, locales)
                 apiResult['Data']['result'][0]['text'].append(ocr_results)
-
+                apiResult["Message"] = "Tags and Text added successfully"
         apiResult["Status"] = "Ok"
 
         return jsonify(apiResult)
